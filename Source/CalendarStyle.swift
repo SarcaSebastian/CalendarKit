@@ -73,6 +73,11 @@ public struct TimelineStyle {
   public var verticalInset: CGFloat = 10
   public var leftInset: CGFloat = 53
   public var eventGap: CGFloat = 0
+  public var startHour: Int = 0
+  public var endHour: Int = 24
+    
+  public var numberOfHours: Int { endHour - startHour }
+    
   public init() {}
 }
 

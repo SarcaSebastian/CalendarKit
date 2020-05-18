@@ -85,11 +85,15 @@ public final class TimelineView: UIView {
     return allDayView.bounds.height
   }
 
-  var style = TimelineStyle()
+  var style = TimelineStyle() {
+    didSet {
+      regenerateTimeStrings()
+    }
+  }
   private var horizontalEventInset: CGFloat = 3
 
   public var fullHeight: CGFloat {
-    return style.verticalInset * 2 + style.verticalDiff * 24
+    return style.verticalInset * 2 + style.verticalDiff * CGFloat(style.numberOfHours)
   }
 
   public var calendarWidth: CGFloat {
@@ -119,13 +123,13 @@ public final class TimelineView: UIView {
     return is24hClock ? _24hTimes : _12hTimes
   }
 
-  private lazy var _12hTimes: [String] = TimeStringsFactory(calendar).make12hStrings()
-  private lazy var _24hTimes: [String] = TimeStringsFactory(calendar).make24hStrings()
+  private lazy var _12hTimes: [String] = TimeStringsFactory(calendar).make12hStrings(startHour: style.startHour, endHour: style.endHour)
+  private lazy var _24hTimes: [String] = TimeStringsFactory(calendar).make24hStrings(startHour: style.startHour, endHour: style.endHour)
   
   private func regenerateTimeStrings() {
     let factory = TimeStringsFactory(calendar)
-    _12hTimes = factory.make12hStrings()
-    _24hTimes = factory.make24hStrings()
+    _12hTimes = factory.make12hStrings(startHour: style.startHour, endHour: style.endHour)
+    _24hTimes = factory.make24hStrings(startHour: style.startHour, endHour: style.endHour)
   }
   
   public lazy var longPressGestureRecognizer = UILongPressGestureRecognizer(target: self,
@@ -472,18 +476,19 @@ public final class TimelineView: UIView {
       // Event starting the previous day
       dayOffset -= 1
     }
-    let fullTimelineHeight = 24 * style.verticalDiff
-    let hour = component(component: .hour, from: date)
+    
+    let fullTimelineHeight = CGFloat(style.numberOfHours) * style.verticalDiff
+    let hour = component(component: .hour, from: date) - style.startHour
     let minute = component(component: .minute, from: date)
     let hourY = CGFloat(hour) * style.verticalDiff + style.verticalInset
     let minuteY = CGFloat(minute) * style.verticalDiff / 60
-    return hourY + minuteY + fullTimelineHeight * dayOffset
+    return (hourY + minuteY + fullTimelineHeight * dayOffset)
   }
 
   public func yToDate(_ y: CGFloat) -> Date {
     let timeValue = y - style.verticalInset
-    var hour = Int(timeValue / style.verticalDiff)
-    let fullHourPoints = CGFloat(hour) * style.verticalDiff
+    var hour = Int(timeValue / style.verticalDiff) + style.startHour
+    let fullHourPoints = (CGFloat(hour) * style.verticalDiff)
     let minuteDiff = timeValue - fullHourPoints
     let minute = Int(minuteDiff / style.verticalDiff * 60)
     var dayOffset = 0
